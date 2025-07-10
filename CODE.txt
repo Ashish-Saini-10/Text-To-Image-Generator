@@ -1,0 +1,32 @@
+!pip install --upgrade diffusers transformers accelerate safetensors gradio --quiet
+# Import libraries
+from diffusers import DiffusionPipeline
+import torch
+from PIL import Image
+import gradio as gr
+import time
+
+# Load the SDXL pipeline
+model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+pipe = DiffusionPipeline.from_pretrained(
+    model_id, torch_dtype=torch.float16, variant="fp16", use_safetensors=True
+)
+pipe.to("cuda")
+
+# Function to generate image
+def generate_image(prompt):
+    start = time.time()
+    image = pipe(prompt=prompt).images[0]
+    image.save("sdxl_output.png")
+    end = time.time()
+    print(f"Image generated in {round(end - start, 2)} seconds.")
+    return image
+
+# Gradio Interface
+gr.Interface(
+    fn=generate_image,
+    inputs=gr.Textbox(label="Enter your prompt"),
+    outputs=gr.Image(label="Generated Image"),
+    title="SDXL Text-to-Image Generator",
+    description="Enter a prompt to generate an image using Stable Diffusion XL"
+).launch(share=True)
